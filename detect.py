@@ -4,18 +4,22 @@ from PIL import Image
 import imutils
 from tensorflow.keras.models import load_model
 import time
-import pytesseract
+import keras_ocr
+import matplotlib.pyplot as plt
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+#pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 #os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'false'
 
 net = cv2.dnn.readNet("yolov3-custom_7000.weights", "yolov3-custom.cfg")
 net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
 net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
 
+pipeline = keras_ocr.pipeline.Pipeline()
+
 model = load_model('helmet-nonhelmet_cnn.h5')
 print('model loaded!!!')
-cap = cv2.VideoCapture(r"1.mp4")
+cap = cv2.VideoCapture(r"bs.mp4")
 COLORS = [(0, 255, 0), (0, 0, 255)]
 
 layer_names = net.getLayerNames()
@@ -47,7 +51,7 @@ while True:
     #cv2.imshow('TEST', img)
     #time.sleep(5)
     img = imutils.resize(img, height=500)
-    # img = cv2.imread('test.png')
+    # img = cv2.imread('test.py.png')
     height, width = img.shape[:2]
 
     blob = cv2.dnn.blobFromImage(img, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
@@ -96,20 +100,35 @@ while True:
                 cv2.rectangle(img, (x, y), (x + w, y + h), color, 7)
                 # h_r = img[max(0,(y-330)):max(0,(y-330 + h+100)) , max(0,(x-80)):max(0,(x-80 + w+130))]
                 plate = img[y:y + h, x:x + w]
+                cv2.imshow('Number Plate', plate)
                 #cv2.imshow('BOZ', h_n)
                 if y_h > 0 and x_h > 0:
                     h_r = img[y_h:y_h + h_h, x_h:x_h + w_h]
                     c = helmet_or_nohelmet(h_r)
-                    if c == 0:
-                        text = pytesseract.image_to_string(plate)
-                        print(text)
-                        cv2.imwrite(text+'.png', plate)
+                    #if c == 0:
+                    cv2.imwrite('1.png', plate)
+                    images = [keras_ocr.tools.read('1.png')]
+                    plt.figure(figsize=(10, 20))
+                    fig, axs = plt.subplots(nrows=1, figsize=(10, 20), squeeze=False)
+                    #print(axs)
+                    prediction_groups = pipeline.recognize(images)
+                    
+                    #axs = axs.flatten()
+                    #for ax, image, predictions in zip(axs, images, prediction_groups):
+                        #an = keras_ocr.tools.drawAnnotations(image=image,
+                                                        #predictions=predictions,
+                                                        #ax=ax)
+                        #plt.show()
+
                     cv2.putText(img, ['helmet', 'no-helmet'][c], (x, y - 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0),
                                 2)
                     cv2.rectangle(img, (x_h, y_h), (x_h + w_h, y_h + h_h), (255, 0, 0), 10)
 
     writer.write(img)
-    cv2.imshow("Image", img)
+    try:
+        cv2.imshow("Image", img)
+    except:
+        pass
 
     if cv2.waitKey(1) == 27:
         break
