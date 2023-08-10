@@ -63,14 +63,15 @@ def detect_helmet(img, n, gap, model, pipeline, output_layers, net):
                 pass
                 # helmet_roi = img[max(0, y):max(0, y) + max(0, h) // 4, max(0, x):max(0, x) + max(0, w)]
             else:  # Helmet Detection
-                x_h = x
-                y_h = y - 400
+                x_h = x-100
+                y_h = 20
                 w_h = w + 300
                 h_h = h + 300
                 cv2.rectangle(img, (x, y), (x + w, y + h), color, 7)
                 # h_r = img[max(0,(y-330)):max(0,(y-330 + h+100)) , max(0,(x-80)):max(0,(x-80 + w+130))]
                 plate = img[y:y + h, x:x + w]
                 cv2.imwrite('platemp.png', plate)
+                print(x_h, y_h)
                 if y_h > 0 and x_h > 0:
                     h_r1 = img[y_h:y_h + h_h, x_h:x_h + w_h]
                     #cv2.imshow('helmet', h_r)
@@ -83,7 +84,7 @@ def detect_helmet(img, n, gap, model, pipeline, output_layers, net):
                         c = int(model.predict(h_r)[0][0])
                     except:
                         c = None
-                    if c == 0:
+                    if c == 1:
                         print("NO HELMET!")
                         images = [keras_ocr.tools.read('platemp.png')]
                         prediction_groups = pipeline.recognize(images)

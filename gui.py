@@ -2,10 +2,12 @@ from PIL import Image, ImageTk
 from tkinter import Tk, Label, Canvas, NW, Button, PhotoImage,ttk, Text, Frame, filedialog
 import cv2
 import keras_ocr
-from tensorflow.keras.models import load_model
+import os
+import tensorflow as tf
 import numpy as np
 import imutils
 import matplotlib.pyplot as plt
+import glob
 from detect import detect_helmet
 from threading import *
 
@@ -14,10 +16,11 @@ root.title("HELMET DETECTOR")
 w, h = root.winfo_screenwidth(), root.winfo_screenheight()
 (root.geometry("%dx%d" % (w, h)))
 
-images = ["nil.png"]  # , "image2.png", "image3.png"]
-images_new = ["nilp.png"]  # , "img1.png", "img2.png"]
-text_new = [""]  # ,"ABCD012","DL4C AF 4943"]
 
+images = ["nil.png"]  # , "image2.png", "image3.png"]
+images_new = ["load.png"]  # , "img1.png", "img2.png"]
+text_new = [""]  # ,"ABCD012","DL4C AF 4943"]
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 net = cv2.dnn.readNet("yolov3-custom_7000.weights", "yolov3-custom.cfg")
 net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
 net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
@@ -26,7 +29,7 @@ output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
 
 pipeline = keras_ocr.pipeline.Pipeline()
 
-model = load_model('helmet-nonhelmet_cnn.h5')
+model = tf.keras.models.load_model('helmet-nonhelmet_cnn.h5')
 print('model loaded!!!')
 
 class VideoPlayer:
@@ -95,7 +98,9 @@ if __name__ == "__main__":
     video_path = "video.mp4"
     initial_x = 0
     initial_y = 0
-    cap = cv2.VideoCapture('asmall.mp4')
+    cap = cv2.VideoCapture('videos.mp4')
+    imgs = glob.glob('imgs/*.png')
+    #frame = cv2.imread()
     #player = VideoPlayer(root, video_path, initial_x, initial_y)
     n = 1
     gap = True
@@ -105,12 +110,16 @@ if __name__ == "__main__":
         imag = PhotoImage(file='load.png')
         imag_label = Label(root, image=imag)
         imag_label.place(x=0, y=0)
+        #for i in imgs:
         while True:
+            #fr = cv2.imread(imgs[0])
             ret, fr = cap.read()
+            #print(fr)
             detection = detect_helmet(fr, n, gap, model, pipeline, output_layers, net)
             if detection is None:
-                print('none')
-                continue
+                #print('none')
+                img = 'temp.png'
+                #continue
             elif len(detection) == 3:
                 img, n, gap = detection
             elif len(detection) == 6:
